@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: dataops_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dataops
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    container_name: dataops_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    container_name: dataops_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
