@@ -6,17 +6,20 @@ from app.database import engine
 
 from app.models.connection import Connection
 from app.models.db_metric import DBMetric
+from app.models.query_log import QueryLog
 
 from app.routes.connection_routes import router as connection_router
 from app.routes.metric_routes import router as metric_router
+from app.routes.query_routes import router as query_router
 
 from app.services.health_service import run_health_check
+from app.services.query_service import simulate_query
 
 Base.metadata.create_all(
     bind=engine
 )
 
-app=FastAPI(
+app = FastAPI(
     title="DataOps Control Center API",
     version="1.0.0"
 )
@@ -29,12 +32,22 @@ app.include_router(
     metric_router
 )
 
-scheduler=BackgroundScheduler()
+app.include_router(
+    query_router
+)
+
+scheduler = BackgroundScheduler()
 
 scheduler.add_job(
     run_health_check,
     "interval",
     seconds=10
+)
+
+scheduler.add_job(
+    simulate_query,
+    "interval",
+    seconds=15
 )
 
 scheduler.start()
@@ -43,7 +56,7 @@ scheduler.start()
 @app.get("/")
 def home():
 
-    return{
+    return {
         "message":
         "DataOps Control Center API funcionando"
     }
