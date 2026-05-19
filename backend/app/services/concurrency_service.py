@@ -1,48 +1,133 @@
 import random
+import time
+
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 
 from app.database import SessionLocal
 from app.models.tx_log import TXLog
 
 
-def run_concurrency_test():
+operations = [
+    "INSERT",
+    "UPDATE",
+    "DELETE",
+    "SELECT"
+]
 
-    db=SessionLocal()
+lock_types = [
+    "SHARED",
+    "EXCLUSIVE",
+    "DEADLOCK",
+    "TIMEOUT"
+]
+
+
+def simulate_user_transaction(
+    user_id
+):
+
+    db = SessionLocal()
 
     try:
 
-        transaction=TXLog(
+        start = datetime.utcnow()
 
-            transaction_name=
-            f"TX_{random.randint(1000,9999)}",
+        wait_time = round(
+            random.uniform(
+                10,
+                900
+            ),
+            2
+        )
 
-            status=random.choice(
-                [
-                    "SUCCESS",
-                    "WAITING",
-                    "DEADLOCK"
-                ]
+        time.sleep(
+            wait_time / 1000
+        )
+
+        lock_type = random.choices(
+            lock_types,
+            weights=[
+                60,
+                25,
+                10,
+                5
+            ],
+            k=1
+        )[0]
+
+        if lock_type == "DEADLOCK":
+
+            resolution = (
+                "Deadlock detectado y sesión finalizada automáticamente"
+            )
+
+        elif lock_type == "TIMEOUT":
+
+            resolution = (
+                "Transacción cancelada por tiempo de espera"
+            )
+
+        else:
+
+            resolution = (
+                "Transacción completada correctamente"
+            )
+
+        tx = TXLog(
+
+            session =
+            f"session_{user_id}",
+
+            operation =
+            random.choice(
+                operations
             ),
 
-            lock_type=random.choice(
-                [
-                    "ROW LOCK",
-                    "TABLE LOCK",
-                    "PAGE LOCK"
-                ]
-            )
+            inicio =
+            start,
+
+            fin =
+            datetime.utcnow(),
+
+            wait_time =
+            wait_time,
+
+            lock_type =
+            lock_type,
+
+            resolution =
+            resolution
         )
 
         db.add(
-            transaction
+            tx
         )
 
         db.commit()
 
-        print(
-            "Concurrencia ejecutada",
-            flush=True
-        )
-
     finally:
 
         db.close()
+
+
+def run_concurrency_test():
+
+    with ThreadPoolExecutor(
+        max_workers=20
+    ) as executor:
+
+        for user_id in range(
+            1,
+            101
+        ):
+
+            executor.submit(
+                simulate_user_transaction,
+                user_id
+            )
+
+    print(
+        "Prueba de concurrencia ejecutada con 100 usuarios",
+        flush=True
+    )

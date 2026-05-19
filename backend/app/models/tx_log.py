@@ -1,6 +1,7 @@
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import Float
 from sqlalchemy import DateTime
 
 from datetime import datetime
@@ -10,27 +11,38 @@ from app.database import Base
 
 class TXLog(Base):
 
-    __tablename__="tx_log"
+    __tablename__ = "tx_log"
 
-    id=Column(
+    id = Column(
         Integer,
         primary_key=True,
         index=True
     )
 
-    transaction_name=Column(
+    session = Column(
         String
     )
 
-    status=Column(
+    operation = Column(
         String
     )
 
-    lock_type=Column(
+    inicio = Column(
+        DateTime
+    )
+
+    fin = Column(
+        DateTime
+    )
+
+    wait_time = Column(
+        Float
+    )
+
+    lock_type = Column(
         String
     )
 
-    created_at=Column(
-        DateTime,
-        default=datetime.utcnow
+    resolution = Column(
+        String
     )
