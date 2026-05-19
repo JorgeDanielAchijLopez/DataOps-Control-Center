@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.database import Base
@@ -35,6 +36,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(connection_router)
 app.include_router(metric_router)
 app.include_router(query_router)
@@ -46,24 +55,22 @@ app.include_router(cache_router)
 
 scheduler = BackgroundScheduler()
 
-scheduler.add_job(run_health_check,"interval",seconds=10)
-scheduler.add_job(simulate_query,"interval",seconds=15)
-scheduler.add_job(run_concurrency_test,"interval",seconds=30)
+scheduler.add_job(run_health_check, "interval", seconds=10)
+scheduler.add_job(simulate_query, "interval", seconds=15)
+scheduler.add_job(run_concurrency_test, "interval", seconds=30)
 
-scheduler.add_job(generate_backup,"interval",seconds=20,args=["FULL"])
-scheduler.add_job(generate_backup,"interval",seconds=25,args=["DIFF"])
-scheduler.add_job(generate_backup,"interval",seconds=30,args=["INC"])
+scheduler.add_job(generate_backup, "interval", seconds=20, args=["FULL"])
+scheduler.add_job(generate_backup, "interval", seconds=25, args=["DIFF"])
+scheduler.add_job(generate_backup, "interval", seconds=30, args=["INC"])
 
-scheduler.add_job(run_alert_engine,"interval",seconds=20)
-scheduler.add_job(monitor_replication,"interval",seconds=25)
+scheduler.add_job(run_alert_engine, "interval", seconds=20)
+scheduler.add_job(monitor_replication, "interval", seconds=25)
 
 scheduler.start()
 
 
 @app.get("/")
 def home():
-
     return {
-        "message":
-        "DataOps Control Center API funcionando"
+        "message": "DataOps Control Center API funcionando"
     }

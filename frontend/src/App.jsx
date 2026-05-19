@@ -1,122 +1,199 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from "react";
+import axios from "axios";
+
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer
+} from "recharts";
+
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+  const [metrics,setMetrics]=useState([])
+  const [alerts,setAlerts]=useState([])
+  const [backups,setBackups]=useState([])
 
-      <div className="ticks"></div>
+  useEffect(()=>{
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      loadData()
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      const interval=setInterval(
+        loadData,
+        5000
+      )
+
+      return()=>clearInterval(
+        interval
+      )
+
+  },[])
+
+
+const loadData=async()=>{
+
+try{
+
+const metricsRes=
+await axios.get(
+"http://localhost:8000/metrics/"
+)
+
+const alertsRes=
+await axios.get(
+"http://localhost:8000/alerts/"
+)
+
+const backupsRes=
+await axios.get(
+"http://localhost:8000/backups/"
+)
+
+setMetrics(
+metricsRes.data.slice(-15)
+)
+
+setAlerts(
+alertsRes.data
+)
+
+setBackups(
+backupsRes.data
+)
+
 }
+
+catch(error){
+
+console.log(error)
+
+}
+
+}
+
+
+return(
+
+<div
+style={{
+padding:"30px",
+fontFamily:"Arial"
+}}
+>
+
+<h1>
+DataOps Control Center
+</h1>
+
+
+<div
+style={{
+display:"flex",
+gap:"20px",
+marginBottom:"30px"
+}}
+>
+
+<div style={cardStyle}>
+
+<h3>
+Métricas
+</h3>
+
+<h2>
+{metrics.length}
+</h2>
+
+</div>
+
+
+<div style={cardStyle}>
+
+<h3>
+Alertas
+</h3>
+
+<h2>
+{alerts.length}
+</h2>
+
+</div>
+
+
+<div style={cardStyle}>
+
+<h3>
+Backups
+</h3>
+
+<h2>
+{backups.length}
+</h2>
+
+</div>
+
+</div>
+
+
+
+<div
+style={{
+width:"100%",
+height:"400px"
+}}
+>
+
+<h2>
+CPU en tiempo real
+</h2>
+
+<ResponsiveContainer>
+
+<LineChart
+data={metrics}
+>
+
+<CartesianGrid/>
+
+<XAxis
+dataKey="id"
+/>
+
+<YAxis/>
+
+<Tooltip/>
+
+<Line
+type="monotone"
+dataKey="cpu"
+/>
+
+</LineChart>
+
+</ResponsiveContainer>
+
+</div>
+
+</div>
+
+)
+
+}
+
+
+const cardStyle={
+
+background:"#f4f4f4",
+padding:"20px",
+borderRadius:"10px",
+width:"200px"
+
+}
+
 
 export default App
