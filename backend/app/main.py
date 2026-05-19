@@ -19,6 +19,7 @@ from app.routes.transaction_routes import router as transaction_router
 from app.routes.backup_routes import router as backup_router
 from app.routes.alert_routes import router as alert_router
 from app.routes.replication_routes import router as replication_router
+from app.routes.cache_routes import router as cache_router
 
 from app.services.health_service import run_health_check
 from app.services.query_service import simulate_query
@@ -41,6 +42,7 @@ app.include_router(transaction_router)
 app.include_router(backup_router)
 app.include_router(alert_router)
 app.include_router(replication_router)
+app.include_router(cache_router)
 
 scheduler = BackgroundScheduler()
 
