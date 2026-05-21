@@ -22,6 +22,7 @@ function App() {
   const [queries, setQueries] = useState([]);
   const [replication, setReplication] = useState([]);
   const [cache, setCache] = useState({});
+  const [snapshots, setSnapshots] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -41,6 +42,7 @@ function App() {
       const queriesRes = await axios.get("http://localhost:8000/queries/");
       const replicationRes = await axios.get("http://localhost:8000/replication/");
       const cacheRes = await axios.get("http://localhost:8000/cache/summary");
+      const snapshotsRes = await axios.get("http://localhost:8000/snapshots/");
 
       setMetrics(metricsRes.data.slice(-15));
       setAlerts(alertsRes.data);
@@ -48,6 +50,7 @@ function App() {
       setQueries(queriesRes.data);
       setReplication(replicationRes.data.slice(-15));
       setCache(cacheRes.data);
+      setSnapshots(snapshotsRes.data);
     } catch (error) {
       console.log("Error cargando dashboard:", error);
     }
@@ -119,9 +122,12 @@ function App() {
         <div style={cardStyle}>
           <h3>Cache Hit Ratio</h3>
           <h2>{cache.hit_ratio || 0}%</h2>
-          <small>
-            H:{cache.hits || 0} | M:{cache.misses || 0}
-          </small>
+          <small>H:{cache.hits || 0} | M:{cache.misses || 0}</small>
+        </div>
+
+        <div style={cardStyle}>
+          <h3>Snapshots</h3>
+          <h2>{snapshots.length}</h2>
         </div>
       </div>
 
@@ -212,7 +218,36 @@ function App() {
 
       <div style={tablesContainer}>
         <div style={tableBox}>
+          <h2>Snapshots y SLA</h2>
+
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>RPO</th>
+                <th>RTO</th>
+                <th>SLA</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {snapshots.map((snapshot) => (
+                <tr key={snapshot.id}>
+                  <td>{snapshot.name}</td>
+                  <td>{snapshot.description}</td>
+                  <td>{snapshot.rpo_minutes} min</td>
+                  <td>{snapshot.rto_minutes} min</td>
+                  <td>{snapshot.sla_status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={tableBox}>
           <h2>Últimas alertas</h2>
+
           <table style={tableStyle}>
             <thead>
               <tr>
@@ -238,6 +273,7 @@ function App() {
 
         <div style={tableBox}>
           <h2>Top 10 Queries lentas</h2>
+
           <table style={tableStyle}>
             <thead>
               <tr>
