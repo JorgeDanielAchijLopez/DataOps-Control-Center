@@ -1,48 +1,122 @@
 from fastapi import APIRouter
-import random
+import redis
+import json
+import time
+
 
 router = APIRouter(
     prefix="/cache",
     tags=["Cache"]
 )
 
+
+r = redis.Redis(
+    host="redis",
+    port=6379,
+    decode_responses=True
+)
+
+
 cache_hits = 0
 cache_misses = 0
 
 
 @router.get("/query/{query_key}")
-def cache_query(
+def cached_query(
     query_key: str
 ):
 
     global cache_hits
     global cache_misses
 
-    hit = random.choice(
-        [True, False]
+    start = time.time()
+
+    data = r.get(
+        query_key
     )
 
-    if hit:
+    if data:
 
         cache_hits += 1
 
         return {
-            "status":
-            "CACHE HIT",
 
-            "query":
-            query_key
+            "source":
+            "CACHE",
+
+            "time_ms":
+            round(
+                (
+                    time.time() - start
+                ) * 1000,
+                2
+            ),
+
+            "data":
+            json.loads(
+                data
+            )
         }
 
     cache_misses += 1
 
-    return {
+    time.sleep(
+        0.4
+    )
 
-        "status":
-        "CACHE MISS",
+    fake_result = {
 
         "query":
+        query_key,
+
+        "rows":
+        150
+    }
+
+    r.setex(
+
+        query_key,
+
+        60,
+
+        json.dumps(
+            fake_result
+        )
+    )
+
+    return {
+
+        "source":
+        "DATABASE",
+
+        "time_ms":
+        round(
+            (
+                time.time() - start
+            ) * 1000,
+            2
+        ),
+
+        "data":
+        fake_result
+    }
+
+
+@router.delete(
+    "/invalidate/{query_key}"
+)
+def invalidate_cache(
+    query_key: str
+):
+
+    r.delete(
         query_key
+    )
+
+    return {
+
+        "message":
+        "Cache eliminada"
     }
 
 
@@ -50,23 +124,22 @@ def cache_query(
 def cache_summary():
 
     total = (
+
         cache_hits +
         cache_misses
     )
 
-    ratio = (
+    ratio = 0
 
-        round(
+    if total > 0:
+
+        ratio = round(
             (
                 cache_hits /
                 total
             ) * 100,
             2
         )
-
-        if total > 0
-        else 0
-    )
 
     return {
 
@@ -77,5 +150,8 @@ def cache_summary():
         cache_misses,
 
         "hit_ratio":
-        ratio
+        ratio,
+
+        "ttl":
+        "60 segundos"
     }
