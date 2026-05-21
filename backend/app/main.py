@@ -24,6 +24,7 @@ from app.routes.replication_routes import router as replication_router
 from app.routes.cache_routes import router as cache_router
 from app.routes.snapshot_routes import router as snapshot_router
 from app.routes.auth_routes import router as auth_router
+from app.routes.bi_routes import router as bi_router
 
 from app.services.health_service import run_health_check
 from app.services.query_service import simulate_query
@@ -57,14 +58,15 @@ app.include_router(alert_router)
 app.include_router(replication_router)
 app.include_router(cache_router)
 app.include_router(snapshot_router)
+app.include_router(bi_router)
 
 scheduler = BackgroundScheduler()
 
-scheduler.add_job(run_health_check,"interval",seconds=10)
-scheduler.add_job(simulate_query,"interval",seconds=15)
-scheduler.add_job(run_concurrency_test,"interval",seconds=30)
-scheduler.add_job(run_alert_engine,"interval",seconds=20)
-scheduler.add_job(monitor_replication,"interval",seconds=25)
+scheduler.add_job(run_health_check, "interval", seconds=10)
+scheduler.add_job(simulate_query, "interval", seconds=15)
+scheduler.add_job(run_concurrency_test, "interval", seconds=30)
+scheduler.add_job(run_alert_engine, "interval", seconds=20)
+scheduler.add_job(monitor_replication, "interval", seconds=25)
 
 scheduler.start()
 
@@ -75,5 +77,5 @@ create_default_snapshots()
 def home():
 
     return {
-        "message":"DataOps Control Center API funcionando"
+        "message": "DataOps Control Center API funcionando"
     }
