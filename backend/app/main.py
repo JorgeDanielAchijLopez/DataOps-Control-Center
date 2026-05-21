@@ -23,11 +23,11 @@ from app.routes.alert_routes import router as alert_router
 from app.routes.replication_routes import router as replication_router
 from app.routes.cache_routes import router as cache_router
 from app.routes.snapshot_routes import router as snapshot_router
+from app.routes.auth_routes import router as auth_router
 
 from app.services.health_service import run_health_check
 from app.services.query_service import simulate_query
 from app.services.concurrency_service import run_concurrency_test
-from app.services.backup_service import generate_backup
 from app.services.alert_service import run_alert_engine
 from app.services.replication_service import monitor_replication
 from app.services.snapshot_service import create_default_snapshots
@@ -47,6 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(connection_router)
 app.include_router(metric_router)
 app.include_router(query_router)
@@ -62,11 +63,6 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(run_health_check,"interval",seconds=10)
 scheduler.add_job(simulate_query,"interval",seconds=15)
 scheduler.add_job(run_concurrency_test,"interval",seconds=30)
-
-scheduler.add_job(generate_backup,"interval",seconds=20,args=["FULL"])
-scheduler.add_job(generate_backup,"interval",seconds=25,args=["DIFF"])
-scheduler.add_job(generate_backup,"interval",seconds=30,args=["INC"])
-
 scheduler.add_job(run_alert_engine,"interval",seconds=20)
 scheduler.add_job(monitor_replication,"interval",seconds=25)
 
