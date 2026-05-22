@@ -26,6 +26,9 @@ services:
     container_name: dataops_backend
     restart: always
 
+    env_file:
+      - ./backend/.env
+
     ports:
       - "8000:8000"
 
