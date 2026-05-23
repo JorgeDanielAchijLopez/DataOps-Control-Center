@@ -3,6 +3,33 @@ from app.models.db_metric import DBMetric
 from app.models.alert_log import AlertLog
 from app.models.replication_status import ReplicationStatus
 from app.models.backup_history import BackupHistory
+from app.services.email_service import send_alert_email
+
+
+def create_alert(
+    db,
+    db_id,
+    severity,
+    condition,
+    message
+):
+
+    alert = AlertLog(
+        db_id=db_id,
+        severity=severity,
+        condition=condition,
+        message=message,
+        status="OPEN"
+    )
+
+    db.add(alert)
+
+    if severity in ["CRITICAL", "WARNING"]:
+
+        send_alert_email(
+            subject=f"Alerta crítica DataOps: {condition}",
+            message=message
+        )
 
 
 def run_alert_engine():
@@ -23,50 +50,42 @@ def run_alert_engine():
 
             if metric.cpu > 85:
 
-                db.add(
-                    AlertLog(
-                        db_id=metric.connection_id,
-                        severity="WARNING",
-                        condition="CPU > 85%",
-                        message=f"CPU alto detectado: {metric.cpu}%",
-                        status="OPEN"
-                    )
+                create_alert(
+                    db=db,
+                    db_id=metric.connection_id,
+                    severity="WARNING",
+                    condition="CPU > 85%",
+                    message=f"CPU alto detectado: {metric.cpu}%"
                 )
 
             if metric.deadlocks > 3:
 
-                db.add(
-                    AlertLog(
-                        db_id=metric.connection_id,
-                        severity="CRITICAL",
-                        condition="Deadlocks > 3",
-                        message=f"Deadlocks críticos detectados: {metric.deadlocks}",
-                        status="OPEN"
-                    )
+                create_alert(
+                    db=db,
+                    db_id=metric.connection_id,
+                    severity="CRITICAL",
+                    condition="Deadlocks > 3",
+                    message=f"Deadlocks críticos detectados: {metric.deadlocks}"
                 )
 
             if metric.disk_usage > 90:
 
-                db.add(
-                    AlertLog(
-                        db_id=metric.connection_id,
-                        severity="CRITICAL",
-                        condition="Disco > 90%",
-                        message=f"Uso de disco crítico: {metric.disk_usage}%",
-                        status="OPEN"
-                    )
+                create_alert(
+                    db=db,
+                    db_id=metric.connection_id,
+                    severity="CRITICAL",
+                    condition="Disco > 90%",
+                    message=f"Uso de disco crítico: {metric.disk_usage}%"
                 )
 
             if metric.connections > 80:
 
-                db.add(
-                    AlertLog(
-                        db_id=metric.connection_id,
-                        severity="WARNING",
-                        condition="Conexiones > umbral",
-                        message=f"Muchas conexiones activas: {metric.connections}",
-                        status="OPEN"
-                    )
+                create_alert(
+                    db=db,
+                    db_id=metric.connection_id,
+                    severity="WARNING",
+                    condition="Conexiones > umbral",
+                    message=f"Muchas conexiones activas: {metric.connections}"
                 )
 
         latest_replication = db.query(
@@ -77,14 +96,12 @@ def run_alert_engine():
 
         if latest_replication and latest_replication.replication_lag > 10:
 
-            db.add(
-                AlertLog(
-                    db_id=None,
-                    severity="WARNING",
-                    condition="Lag replicación > 10 seg",
-                    message=f"Lag de replicación alto: {latest_replication.replication_lag} seg",
-                    status="OPEN"
-                )
+            create_alert(
+                db=db,
+                db_id=None,
+                severity="WARNING",
+                condition="Lag replicación > 10 seg",
+                message=f"Lag de replicación alto: {latest_replication.replication_lag} seg"
             )
 
         latest_backup = db.query(
@@ -95,20 +112,18 @@ def run_alert_engine():
 
         if latest_backup and latest_backup.status == "FAILED":
 
-            db.add(
-                AlertLog(
-                    db_id=None,
-                    severity="CRITICAL",
-                    condition="Backup fallido",
-                    message=f"Fallo detectado en backup: {latest_backup.file_name}",
-                    status="OPEN"
-                )
+            create_alert(
+                db=db,
+                db_id=None,
+                severity="CRITICAL",
+                condition="Backup fallido",
+                message=f"Fallo detectado en backup: {latest_backup.file_name}"
             )
 
         db.commit()
 
         print(
-            "Alert Engine ejecutado con reglas extendidas",
+            "Alert Engine ejecutado con correo SMTP",
             flush=True
         )
 
